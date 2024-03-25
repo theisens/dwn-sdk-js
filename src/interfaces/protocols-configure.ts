@@ -1,13 +1,26 @@
-import type { Signer } from '../types/signer.js';
-import type { ProtocolDefinition, ProtocolRuleSet, ProtocolsConfigureDescriptor, ProtocolsConfigureMessage } from '../types/protocols-types.js';
+import type { Signer } from "../types/signer.js";
+import type {
+  ProtocolDefinition,
+  ProtocolRuleSet,
+  ProtocolsConfigureDescriptor,
+  ProtocolsConfigureMessage,
+} from "../types/protocols-types.js";
 
-import { AbstractMessage } from '../core/abstract-message.js';
-import { Message } from '../core/message.js';
-import { Time } from '../utils/time.js';
-import { DwnError, DwnErrorCode } from '../core/dwn-error.js';
-import { DwnInterfaceName, DwnMethodName } from '../enums/dwn-interface-method.js';
-import { normalizeProtocolUrl, normalizeSchemaUrl, validateProtocolUrlNormalized, validateSchemaUrlNormalized } from '../utils/url.js';
-import { ProtocolAction, ProtocolActor } from '../types/protocols-types.js';
+import { AbstractMessage } from "../core/abstract-message.js";
+import { Message } from "../core/message.js";
+import { Time } from "../utils/time.js";
+import { DwnError, DwnErrorCode } from "../core/dwn-error.js";
+import {
+  DwnInterfaceName,
+  DwnMethodName,
+} from "../enums/dwn-interface-method.js";
+import {
+  normalizeProtocolUrl,
+  normalizeSchemaUrl,
+  validateProtocolUrlNormalized,
+  validateSchemaUrlNormalized,
+} from "../utils/url.js";
+import { ProtocolAction, ProtocolActor } from "../types/protocols-types.js";
 
 export type ProtocolsConfigureOptions = {
   messageTimestamp?: string;
@@ -17,32 +30,43 @@ export type ProtocolsConfigureOptions = {
 };
 
 export class ProtocolsConfigure extends AbstractMessage<ProtocolsConfigureMessage> {
-  public static async parse(message: ProtocolsConfigureMessage): Promise<ProtocolsConfigure> {
+  public static async parse(
+    message: ProtocolsConfigureMessage
+  ): Promise<ProtocolsConfigure> {
     Message.validateJsonSchema(message);
-    ProtocolsConfigure.validateProtocolDefinition(message.descriptor.definition);
-    await Message.validateSignatureStructure(message.authorization.signature, message.descriptor);
+    ProtocolsConfigure.validateProtocolDefinition(
+      message.descriptor.definition
+    );
+    await Message.validateSignatureStructure(
+      message.authorization.signature,
+      message.descriptor
+    );
     Time.validateTimestamp(message.descriptor.messageTimestamp);
 
     return new ProtocolsConfigure(message);
   }
 
-  public static async create(options: ProtocolsConfigureOptions): Promise<ProtocolsConfigure> {
+  public static async create(
+    options: ProtocolsConfigureOptions
+  ): Promise<ProtocolsConfigure> {
     const descriptor: ProtocolsConfigureDescriptor = {
-      interface        : DwnInterfaceName.Protocols,
-      method           : DwnMethodName.Configure,
-      messageTimestamp : options.messageTimestamp ?? Time.getCurrentTimestamp(),
-      definition       : ProtocolsConfigure.normalizeDefinition(options.definition)
+      interface: DwnInterfaceName.Protocols,
+      method: DwnMethodName.Configure,
+      messageTimestamp: options.messageTimestamp ?? Time.getCurrentTimestamp(),
+      definition: ProtocolsConfigure.normalizeDefinition(options.definition),
     };
 
     const authorization = await Message.createAuthorization({
       descriptor,
-      signer             : options.signer,
-      permissionsGrantId : options.permissionsGrantId
+      signer: options.signer,
+      permissionsGrantId: options.permissionsGrantId,
     });
     const message = { descriptor, authorization };
 
     Message.validateJsonSchema(message);
-    ProtocolsConfigure.validateProtocolDefinition(message.descriptor.definition);
+    ProtocolsConfigure.validateProtocolDefinition(
+      message.descriptor.definition
+    );
 
     const protocolsConfigure = new ProtocolsConfigure(message);
     return protocolsConfigure;
@@ -51,7 +75,9 @@ export class ProtocolsConfigure extends AbstractMessage<ProtocolsConfigureMessag
   /**
    * Performs validation on the given protocol definition that are not easy to do using a JSON schema.
    */
-  private static validateProtocolDefinition(definition: ProtocolDefinition): void {
+  private static validateProtocolDefinition(
+    definition: ProtocolDefinition
+  ): void {
     const { protocol, types } = definition;
 
     // validate protocol url
@@ -70,19 +96,22 @@ export class ProtocolsConfigure extends AbstractMessage<ProtocolsConfigureMessag
   }
 
   private static validateStructure(definition: ProtocolDefinition): void {
-
     // gather all declared record types
     const recordTypes = Object.keys(definition.types);
 
     // gather all roles
-    const roles = ProtocolsConfigure.fetchAllRolePathsRecursively('', definition.structure, []);
+    const roles = ProtocolsConfigure.fetchAllRolePathsRecursively(
+      "",
+      definition.structure,
+      []
+    );
 
     // validate the entire rule set structure recursively
     ProtocolsConfigure.validateRuleSetRecursively({
-      ruleSet             : definition.structure,
-      ruleSetProtocolPath : '',
+      ruleSet: definition.structure,
+      ruleSetProtocolPath: "",
       recordTypes,
-      roles
+      roles,
     });
   }
 
@@ -90,23 +119,30 @@ export class ProtocolsConfigure extends AbstractMessage<ProtocolsConfigureMessag
    * Parses the given rule set hierarchy to get all the role protocol paths.
    * @throws DwnError if the hierarchy depth goes beyond 10 levels.
    */
-  private static fetchAllRolePathsRecursively(ruleSetProtocolPath: string, ruleSet: ProtocolRuleSet, roles: string[]): string[] {
+  private static fetchAllRolePathsRecursively(
+    ruleSetProtocolPath: string,
+    ruleSet: ProtocolRuleSet,
+    roles: string[]
+  ): string[] {
     // Limit the depth of the record hierarchy to 10 levels
     // There is opportunity to optimize here to avoid repeated string splitting
-    if (ruleSetProtocolPath.split('/').length > 10) {
-      throw new DwnError(DwnErrorCode.ProtocolsConfigureRecordNestingDepthExceeded, 'Record nesting depth exceeded 10 levels.');
+    if (ruleSetProtocolPath.split("/").length > 10) {
+      throw new DwnError(
+        DwnErrorCode.ProtocolsConfigureRecordNestingDepthExceeded,
+        "Record nesting depth exceeded 10 levels."
+      );
     }
 
     for (const recordType in ruleSet) {
       // ignore non-nested-record properties
-      if (recordType.startsWith('$')) {
+      if (recordType.startsWith("$")) {
         continue;
       }
 
       const childRuleSet = ruleSet[recordType];
 
       let childRuleSetProtocolPath;
-      if (ruleSetProtocolPath === '') {
+      if (ruleSetProtocolPath === "") {
         childRuleSetProtocolPath = recordType;
       } else {
         childRuleSetProtocolPath = `${ruleSetProtocolPath}/${recordType}`;
@@ -116,7 +152,11 @@ export class ProtocolsConfigure extends AbstractMessage<ProtocolsConfigureMessag
       if (childRuleSet.$role) {
         roles.push(childRuleSetProtocolPath);
       } else {
-        ProtocolsConfigure.fetchAllRolePathsRecursively(childRuleSetProtocolPath, childRuleSet, roles);
+        ProtocolsConfigure.fetchAllRolePathsRecursively(
+          childRuleSetProtocolPath,
+          childRuleSet,
+          roles
+        );
       }
     }
 
@@ -126,10 +166,12 @@ export class ProtocolsConfigure extends AbstractMessage<ProtocolsConfigureMessag
   /**
    * Validates the given rule set structure then recursively validates its nested child rule sets.
    */
-  private static validateRuleSetRecursively(
-    input: { ruleSet: ProtocolRuleSet, ruleSetProtocolPath: string, recordTypes: string[], roles: string[] }
-  ): void {
-
+  private static validateRuleSetRecursively(input: {
+    ruleSet: ProtocolRuleSet;
+    ruleSetProtocolPath: string;
+    recordTypes: string[];
+    roles: string[];
+  }): void {
     const { ruleSet, ruleSetProtocolPath, recordTypes, roles } = input;
 
     // Validate $actions in the rule set
@@ -155,13 +197,15 @@ export class ProtocolsConfigure extends AbstractMessage<ProtocolsConfigureMessag
         if (!roles.includes(actionRule.role)) {
           throw new DwnError(
             DwnErrorCode.ProtocolsConfigureRoleDoesNotExistAtGivenPath,
-            `Role in action ${JSON.stringify(actionRule)} for rule set ${ruleSetProtocolPath} does not exist.`
+            `Role in action ${JSON.stringify(
+              actionRule
+            )} for rule set ${ruleSetProtocolPath} does not exist.`
           );
         }
       }
 
       // Validate that if `who` is set to `anyone` then `of` is not set
-      if (actionRule.who === 'anyone' && actionRule.of) {
+      if (actionRule.who === "anyone" && actionRule.of) {
         throw new DwnError(
           DwnErrorCode.ProtocolsConfigureInvalidActionOfNotAllowed,
           `'of' is not allowed at rule set protocol path (${ruleSetProtocolPath})`
@@ -175,13 +219,22 @@ export class ProtocolsConfigure extends AbstractMessage<ProtocolsConfigureMessag
       //             Since `of` is undefined, it implies the recipient of THIS record,
       //             there is no 'recipient' until this record has been created, so it makes no sense to allow recipient to write this record.
       // - `query` - Only authorized using roles, so allowing direct recipients to query is outside the scope.
-      if (actionRule.who === ProtocolActor.Recipient && actionRule.of === undefined) {
-
+      if (
+        actionRule.who === ProtocolActor.Recipient &&
+        actionRule.of === undefined
+      ) {
         // throw if `can` contains a value that is not `co-update` or `co-delete`
-        if (actionRule.can.some((allowedAction) => ![ProtocolAction.CoUpdate, ProtocolAction.CoDelete].includes(allowedAction as ProtocolAction))) {
+        if (
+          actionRule.can.some(
+            (allowedAction) =>
+              ![ProtocolAction.CoUpdate, ProtocolAction.CoDelete].includes(
+                allowedAction as ProtocolAction
+              )
+          )
+        ) {
           throw new DwnError(
             DwnErrorCode.ProtocolsConfigureInvalidRecipientOfAction,
-            'Rules for `recipient` without `of` property must have `can` containing only `co-update` or `co-delete`'
+            "Rules for `recipient` without `of` property must have `can` containing only `co-update` or `co-delete`"
           );
         }
       }
@@ -196,17 +249,27 @@ export class ProtocolsConfigure extends AbstractMessage<ProtocolsConfigureMessag
 
       // validate that if `can` contains `update` or `delete`, it must also contain `create`
       if (actionRule.can !== undefined) {
-        if (actionRule.can.includes(ProtocolAction.Update) && !actionRule.can.includes(ProtocolAction.Create)) {
+        if (
+          actionRule.can.includes(ProtocolAction.Update) &&
+          !actionRule.can.includes(ProtocolAction.Create)
+        ) {
           throw new DwnError(
             DwnErrorCode.ProtocolsConfigureInvalidActionUpdateWithoutCreate,
-            `Action rule ${JSON.stringify(actionRule)} contains 'update' action but missing the required 'create' action.`
+            `Action rule ${JSON.stringify(
+              actionRule
+            )} contains 'update' action but missing the required 'create' action.`
           );
         }
 
-        if (actionRule.can.includes(ProtocolAction.Delete) && !actionRule.can.includes(ProtocolAction.Create)) {
+        if (
+          actionRule.can.includes(ProtocolAction.Delete) &&
+          !actionRule.can.includes(ProtocolAction.Create)
+        ) {
           throw new DwnError(
             DwnErrorCode.ProtocolsConfigureInvalidActionDeleteWithoutCreate,
-            `Action rule ${JSON.stringify(actionRule)} contains 'delete' action but missing the required 'create' action.`
+            `Action rule ${JSON.stringify(
+              actionRule
+            )} contains 'delete' action but missing the required 'create' action.`
           );
         }
       }
@@ -218,10 +281,15 @@ export class ProtocolsConfigure extends AbstractMessage<ProtocolsConfigureMessag
         const otherActionRule = actionRules[j];
 
         if (actionRule.who !== undefined) {
-          if (actionRule.who === otherActionRule.who && actionRule.of === otherActionRule.of) {
+          if (
+            actionRule.who === otherActionRule.who &&
+            actionRule.of === otherActionRule.of
+          ) {
             throw new DwnError(
               DwnErrorCode.ProtocolsConfigureDuplicateActorInRuleSet,
-              `More than one action rule per actor ${actionRule.who} of ${actionRule.of} not allowed within a rule set: ${JSON.stringify(actionRule)}`
+              `More than one action rule per actor ${actionRule.who} of ${
+                actionRule.of
+              } not allowed within a rule set: ${JSON.stringify(actionRule)}`
             );
           }
         } else {
@@ -230,7 +298,9 @@ export class ProtocolsConfigure extends AbstractMessage<ProtocolsConfigureMessag
           if (actionRule.role === otherActionRule.role) {
             throw new DwnError(
               DwnErrorCode.ProtocolsConfigureDuplicateRoleInRuleSet,
-              `More than one action rule per role ${actionRule.role} not allowed within a rule set: ${JSON.stringify(actionRule)}`
+              `More than one action rule per role ${
+                actionRule.role
+              } not allowed within a rule set: ${JSON.stringify(actionRule)}`
             );
           }
         }
@@ -239,7 +309,7 @@ export class ProtocolsConfigure extends AbstractMessage<ProtocolsConfigureMessag
 
     // Validate nested rule sets
     for (const recordType in ruleSet) {
-      if (recordType.startsWith('$')) {
+      if (recordType.startsWith("$")) {
         continue;
       }
 
@@ -253,22 +323,24 @@ export class ProtocolsConfigure extends AbstractMessage<ProtocolsConfigureMessag
       const childRuleSet = ruleSet[recordType];
 
       let childRuleSetProtocolPath;
-      if (ruleSetProtocolPath === '') {
+      if (ruleSetProtocolPath === "") {
         childRuleSetProtocolPath = recordType; // case of initial definition structure
       } else {
         childRuleSetProtocolPath = `${ruleSetProtocolPath}/${recordType}`;
       }
 
       ProtocolsConfigure.validateRuleSetRecursively({
-        ruleSet             : childRuleSet,
-        ruleSetProtocolPath : childRuleSetProtocolPath,
+        ruleSet: childRuleSet,
+        ruleSetProtocolPath: childRuleSetProtocolPath,
         recordTypes,
-        roles
+        roles,
       });
     }
   }
 
-  private static normalizeDefinition(definition: ProtocolDefinition): ProtocolDefinition {
+  private static normalizeDefinition(
+    definition: ProtocolDefinition
+  ): ProtocolDefinition {
     const typesCopy = { ...definition.types };
 
     // Normalize schema url
@@ -281,8 +353,8 @@ export class ProtocolsConfigure extends AbstractMessage<ProtocolsConfigureMessag
 
     return {
       ...definition,
-      protocol : normalizeProtocolUrl(definition.protocol),
-      types    : typesCopy,
+      protocol: normalizeProtocolUrl(definition.protocol),
+      types: typesCopy,
     };
   }
 }

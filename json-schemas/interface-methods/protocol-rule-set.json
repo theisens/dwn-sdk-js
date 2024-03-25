@@ -23,19 +23,12 @@
         "type": "object",
         "oneOf": [
           {
-            "required": [
-              "who",
-              "can"
-            ],
+            "required": ["who", "can"],
             "additionalProperties": false,
             "properties": {
               "who": {
                 "type": "string",
-                "enum": [
-                  "anyone",
-                  "author",
-                  "recipient"
-                ]
+                "enum": ["anyone", "author", "recipient"]
               },
               "of": {
                 "type": "string"
@@ -58,10 +51,7 @@
             }
           },
           {
-            "required": [
-              "role",
-              "can"
-            ],
+            "required": ["role", "can"],
             "properties": {
               "role": {
                 "$comment": "Must be the protocol path of a role record type",
