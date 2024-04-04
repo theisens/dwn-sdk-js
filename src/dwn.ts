@@ -73,6 +73,7 @@ import {
   DidWeb,
   DidResolverCacheLevel,
   UniversalResolver,
+  DidJwk,
 } from "@web5/dids";
 import {
   DwnInterfaceName,
@@ -186,7 +187,7 @@ export class Dwn {
    */
   public static async create(config: DwnConfig): Promise<Dwn> {
     config.didResolver ??= new UniversalResolver({
-      didResolvers: [DidDht, DidIon, DidKey, DidWeb],
+      didResolvers: [DidDht, DidIon, DidKey, DidWeb, DidJwk],
       cache: new DidResolverCacheLevel({ location: "RESOLVERCACHE" }),
     });
     config.tenantGate ??= new AllowAllTenantGate();

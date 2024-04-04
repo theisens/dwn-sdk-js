@@ -2,8 +2,8 @@
  * Contains a public-private key pair and the associated key ID.
  */
 export type KeyMaterial = {
-  keyId: string,
-  keyPair: { publicJwk: PublicJwk, privateJwk: PrivateJwk }
+  keyId: string;
+  keyPair: { publicJwk: PublicJwk; privateJwk: PrivateJwk };
 };
 
 export type Jwk = {
@@ -19,7 +19,7 @@ export type PublicJwk = Jwk & {
   /** The "crv" (curve) parameter identifies the cryptographic curve used with the key.
    * MUST be present for all EC public keys
    */
-  crv: 'Ed25519' | 'secp256k1';
+  crv: 'Ed25519' | 'secp256k1' | 'P-256';
   /**
    * the x coordinate for the Elliptic Curve point.
    * Represented as the base64url encoding of the octet string representation of the coordinate.
@@ -58,19 +58,22 @@ export interface SignatureAlgorithm {
    * @param publicJwk - the key to verify with
    * @returns a boolean indicating whether the signature matches
    */
-  verify(content: Uint8Array, signature: Uint8Array, publicJwk: PublicJwk): Promise<boolean>;
+  verify(
+    content: Uint8Array,
+    signature: Uint8Array,
+    publicJwk: PublicJwk
+  ): Promise<boolean>;
 
   /**
    * generates a random key pair
    * @returns the public and private keys as JWKs
    */
-  generateKeyPair(): Promise<{ publicJwk: PublicJwk, privateJwk: PrivateJwk }>
-
+  generateKeyPair(): Promise<{ publicJwk: PublicJwk; privateJwk: PrivateJwk }>;
 
   /**
    * converts public key in bytes into a JWK
    * @param publicKeyBytes - the public key to convert into JWK
    * @returns the public key in JWK format
    */
-  publicKeyToJwk(publicKeyBytes: Uint8Array): Promise<PublicJwk>
+  publicKeyToJwk(publicKeyBytes: Uint8Array): Promise<PublicJwk>;
 }
