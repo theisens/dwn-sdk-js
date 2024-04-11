@@ -2,7 +2,7 @@
  * A class that represents a DWN error.
  */
 export class DwnError extends Error {
-  constructor (public code: string, message: string) {
+  constructor(public code: string, message: string) {
     super(`${code}: ${message}`);
 
     this.name = 'DwnError';
@@ -152,9 +152,10 @@ export enum DwnErrorCode {
   SchemaValidatorSchemaNotFound = 'SchemaValidatorSchemaNotFound',
   SchemaValidationFailure = 'SchemaValidationFailure',
   Secp256k1KeyNotValid = 'Secp256k1KeyNotValid',
+  Secp256r1KeyNotValid = 'Secp256r1KeyNotValid',
   TimestampInvalid = 'TimestampInvalid',
   UrlProtocolNotNormalized = 'UrlProtocolNotNormalized',
   UrlProtocolNotNormalizable = 'UrlProtocolNotNormalizable',
   UrlSchemaNotNormalized = 'UrlSchemaNotNormalized',
   UrlSchemaNotNormalizable = 'UrlSchemaNotNormalizable',
-};
+}
